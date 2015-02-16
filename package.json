@@ -1,6 +1,6 @@
 {
   "name": "dugout",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Slowlog monitor for MongoDB",
   "main": "index.js",
   "scripts": {
