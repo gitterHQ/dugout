@@ -6,14 +6,34 @@ App.addRegions({ 'masterRegion': '#master' });
 App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
   'use strict';
 
+  var ProfileModel = Backbone.Model.extend({
+    parse: function(data) {
+      var allLocks = [];
+      if (data.profile.lockStats) {
+        Object.keys(data.profile.lockStats).forEach(function(lsKey) {
+          var lockStat = data.profile.lockStats[lsKey];
+          Object.keys(lockStat).forEach(function(key) {
+            allLocks.push(lockStat[key]);
+          });
+        });
+      }
+      data.lockMax = _.max(allLocks);
+      return data;
+    }
+  });
+
   var ItemView = Marionette.ItemView.extend({
     tagName: 'div',
-    className: 'row',
+    className: 'row list-group-item',
     ui: {
-      row: '#master-row'
+      row: '#master-row',
+      explainPlanBtn: '#explain-plan'
     },
     events: {
       'click @ui.row': 'toggle'
+    },
+    triggers: {
+      "click @ui.explainPlanBtn": "request:explain"
     },
     modelEvents: {
       change: 'render'
@@ -24,6 +44,51 @@ App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
     },
     serializeData: function() {
       var data = this.model.toJSON();
+      data.details = ['op', 'ns', 'ntoskip', 'nscanned', 'nscannedObjects', 'keyUpdates', 'numYield', 'nreturned', 'responseLength', 'millis'].map(function(key) {
+        var value = data.profile[key];
+        if (typeof value === 'undefined') return;
+
+        var unit;
+        var alert = 'default';
+        switch(key) {
+          case 'millis':
+            unit = 'ms';
+            if (value >= 100) {
+              alert = 'danger';
+            } else if (value >= 10) {
+              alert = 'warning';
+            }
+            break;
+          case 'responseLength':
+            unit = 'b';
+            if (value >= 16 * 1024) {
+              alert = 'danger';
+            } else if (value >= 1024) {
+              alert = 'warning';
+            }
+            break;
+        }
+
+        return { name: key, value: value, unit: unit, alert: alert };
+      });
+
+      if (data.profile.lockStats) {
+        Object.keys(data.profile.lockStats).forEach(function(lsKey) {
+          var lockStat = data.profile.lockStats[lsKey];
+          Object.keys(lockStat).forEach(function(key) {
+            var alert = 'default';
+            var value = lockStat[key];
+            if (value >= 1000) {
+              alert = 'danger';
+            } else if(value >= 100) {
+              alert = 'warning';
+            }
+
+            data.details.push({ name: lsKey.replace(/Micros$/,'') + ":" + key, value: value, unit: 'µs', alert: alert });
+          });
+        });
+      }
+      data.planExplained = 'plan' in data;
       data.serializedProfile = JSON.stringify(data.profile, null, '  ');
       data.serializedPlan = JSON.stringify(data.plan, null, '  ');
       return data;
@@ -59,7 +124,7 @@ App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
       }
 
       function comparator(a, b) {
-        if (field === 'num') return natural(a.get('num'), b.get('num'));
+        if (field === 'num' || field === 'lockMax') return natural(a.get(field), b.get(field));
         return natural(a.get('profile')[field], b.get('profile')[field]);
       }
 
@@ -146,18 +211,6 @@ App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
     initialize: function () {
     },
     show: function () {
-      var collection = this.collection = new Backbone.Collection([]);
-      var view = this.view = new CompositeView({
-        collection: collection,
-        el: '#master'
-      });
-      view.render();
-
-      var chartView = new ChartView({
-        el: '#chart-container'
-      });
-      chartView.render();
-
       var count = 1;
       var socket = new WebSocket("ws://localhost:8000/");
       socket.onerror = function(err) {
@@ -167,18 +220,44 @@ App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
       socket.onmessage = function(event) {
         var data = event.data;
         var profile = JSON.parse(data);
-        profile.num = count++;
-        collection.add(new Backbone.Model(profile));
-        chartView.addPoint(profile);
-        var excess;
-        if (collection.sortField && collection.sortField.charAt(0) === '-') {
-          excess = collection.toArray().slice(50);
+        if (profile.num) {
+          if (profile.plan) {
+            var item = collection.findWhere({ num: profile.num });
+            item.set('plan', profile.plan || null);
+          }
         } else {
-          excess = collection.toArray().slice(0, -50);
-        }
+          profile.num = count++;
+          collection.add(new ProfileModel(profile, { parse: true }));
+          chartView.addPoint(profile);
+          var excess;
+          if (collection.sortField && collection.sortField.charAt(0) === '-') {
+            excess = collection.toArray().slice(50);
+          } else {
+            excess = collection.toArray().slice(0, -50);
+          }
 
-        collection.remove(excess);
+          collection.remove(excess);
+        }
       };
+
+      var collection = this.collection = new Backbone.Collection([]);
+      var view = this.view = new CompositeView({
+        collection: collection,
+        el: '#master'
+      });
+      view.render();
+
+      view.on("childview:request:explain", function(childView) {
+        var model = childView.model;
+
+        socket.send(JSON.stringify({ action: 'explain', num: model.get('num'), profile: model.get('profile') }));
+      });
+
+      var chartView = new ChartView({
+        el: '#chart-container'
+      });
+      chartView.render();
+
 
     }
   });

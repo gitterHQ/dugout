@@ -15,14 +15,15 @@
     <div class="col-xs-12" id="chart"></div>
   </div>
 
-  <div class="container-fluid" id="master">
+  <div class="container-fluid list-group" id="master">
   </div>
 
   <script type="text/x-handlebars-template" id="master-tpl">
-    <div class="row">
+    <div class="row list-group-item-heading">
       <div class="col-xs-1"><a href="#sort/num" class="sort" data-sort-field="num">#</a></div>
       <div class="col-xs-1"><a href="#sort/op" class="sort" data-sort-field="op">op</a></div>
-      <div class="col-xs-5"><a href="#sort/ns" class="sort" data-sort-field="ns">ns</a></div>
+      <div class="col-xs-4"><a href="#sort/ns" class="sort" data-sort-field="ns">ns</a></div>
+      <div class="col-xs-1"><a href="#sort/lockMax" class="sort" data-sort-field="lockMax">max lock</a></div>
       <div class="col-xs-1"><a href="#sort/millis" class="sort" data-sort-field="millis">millis</a></div>
       <div class="col-xs-2"><a href="#sort/nscanned" class="sort" data-sort-field="nscanned">nscanned</a></div>
       <div class="col-xs-2"><a href="#sort/response-length" class="sort" data-sort-field="responseLength">response length</a></div>
@@ -35,16 +36,41 @@
     <a href="#{{ profile.ts }}" id="master-row">
     <div class="col-xs-1">{{ num }}</div>
     <div class="col-xs-1">{{ profile.op }}</div>
-    <div class="col-xs-5">{{ profile.ns }}</div>
-    <div class="col-xs-1">{{ profile.millis }}</div>
+    <div class="col-xs-4">{{ profile.ns }}</div>
+    <div class="col-xs-1">{{#if lockMax}}{{ lockMax }}<small>µs</small>{{/if}}</div>
+    <div class="col-xs-1">{{ profile.millis }}<small>ms</small></div>
     <div class="col-xs-2">{{ profile.nscanned }}</div>
-    <div class="col-xs-2">{{ profile.responseLength }}</div>
+    <div class="col-xs-2">{{#if profile.responseLength }}{{ profile.responseLength }}<small>b</small>{{/if}}</div>
     </a>
     {{#if showDetail }}
-    <div class="row">
-      <div class="col-xs-6"><h3>Slow Log Entry</h3><pre>{{ serializedProfile }}</pre></div>
-      <div class="col-xs-6"><h3>Execution Plan</h3><pre>{{ serializedPlan }}</pre></div>
-    </div>
+      <br><br>
+
+      <div class="panel panel-info">
+        <div class="panel-heading">
+           <h3 class="panel-title">Detail</h3>
+         </div>
+         <div class="panel-body">
+           <div class="container-fluid">
+           <div class="row">
+           {{#each details}}
+             <div class="col-xs-3"><strong>{{this.name}}</strong></div>
+             <div class="col-xs-3"><span class="label label-{{this.alert}}">{{this.value}}{{#if this.unit}}<small>{{this.unit}}</small>{{/if}}</span></div>
+           {{/each}}
+            </div>
+           </div>
+
+           <div class="row">
+             <div class="col-xs-6"><h3>Slow Log Entry</h3><pre>{{ serializedProfile }}</pre></div>
+             <div class="col-xs-6">
+              <h3>Execution Plan</h3>
+              {{#if planExplained}}
+              <pre>{{ serializedPlan }}</pre></div>
+              {{else}}
+              <button id="explain-plan" class="btn btn-primary">Explain</button>
+              {{/if}}
+           </div>
+         </div>
+      </div>
     {{/if}}
   </script>
 
