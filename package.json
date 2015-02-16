@@ -1,0 +1,37 @@
+{
+  "name": "dugout",
+  "version": "0.1.0",
+  "description": "Slowlog monitor for MongoDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gitterHQ/dugout.git"
+  },
+  "keywords": [
+    "slowlog",
+    "mongo",
+    "mongodb",
+    "profile",
+    "explain"
+  ],
+  "author": "Andrew Newdigate <andrewn@datatribe.net> (http://about.me/andrewnewdigate)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gitterHQ/dugout/issues"
+  },
+  "homepage": "https://github.com/gitterHQ/dugout",
+  "dependencies": {
+    "faye-websocket": "^0.9.1",
+    "mongodb": "^1.4.30",
+    "mongodb-profiler": "^0.1.0",
+    "node-static": "^0.7.6",
+    "nomnom": "^1.8.1",
+    "readable-stream": "^1.0.33"
+  },
+  "bin": {
+    "dugout": "./index.js"
+  }
+}

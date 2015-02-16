@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mongo Profiler</title>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.css">
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>Profiler <small>slowlog</small></h1>
+  </div>
+
+  <div class="container-fluid" id="chart-container">
+    <div class="col-xs-12" id="chart"></div>
+  </div>
+
+  <div class="container-fluid" id="master">
+  </div>
+
+  <script type="text/x-handlebars-template" id="master-tpl">
+    <div class="row">
+      <div class="col-xs-1"><a href="#sort/num" class="sort" data-sort-field="num">#</a></div>
+      <div class="col-xs-1"><a href="#sort/op" class="sort" data-sort-field="op">op</a></div>
+      <div class="col-xs-5"><a href="#sort/ns" class="sort" data-sort-field="ns">ns</a></div>
+      <div class="col-xs-1"><a href="#sort/millis" class="sort" data-sort-field="millis">millis</a></div>
+      <div class="col-xs-2"><a href="#sort/nscanned" class="sort" data-sort-field="nscanned">nscanned</a></div>
+      <div class="col-xs-2"><a href="#sort/response-length" class="sort" data-sort-field="responseLength">response length</a></div>
+    </div>
+    <div class="hover" id="master-container">
+    </div>
+  </script>
+
+  <script type="text/x-handlebars-template" id="item-tpl">
+    <a href="#{{ profile.ts }}" id="master-row">
+    <div class="col-xs-1">{{ num }}</div>
+    <div class="col-xs-1">{{ profile.op }}</div>
+    <div class="col-xs-5">{{ profile.ns }}</div>
+    <div class="col-xs-1">{{ profile.millis }}</div>
+    <div class="col-xs-2">{{ profile.nscanned }}</div>
+    <div class="col-xs-2">{{ profile.responseLength }}</div>
+    </a>
+    {{#if showDetail }}
+    <div class="row">
+      <div class="col-xs-6"><h3>Slow Log Entry</h3><pre>{{ serializedProfile }}</pre></div>
+      <div class="col-xs-6"><h3>Execution Plan</h3><pre>{{ serializedPlan }}</pre></div>
+    </div>
+    {{/if}}
+  </script>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.2.0/lodash.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.marionette/2.3.1/backbone.marionette.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.0/handlebars.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/rickshaw/1.5.1/rickshaw.min.js"></script>
+
+  <script src="profiler-client.js"></script>
+</body>
+</html>
+
+
