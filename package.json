@@ -26,7 +26,7 @@
   "dependencies": {
     "faye-websocket": "^0.9.1",
     "mongodb": "^1.4.30",
-    "mongodb-profiler": "^0.1.0",
+    "mongodb-profiler": "^0.1.1",
     "node-static": "^0.7.6",
     "nomnom": "^1.8.1"
   },

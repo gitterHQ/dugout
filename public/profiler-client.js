@@ -211,34 +211,60 @@ App.module('ProfilerModule', function (Mod, App, Backbone, Marionette, $, _) {
     initialize: function () {
     },
     show: function () {
-      var count = 1;
-      var socket = new WebSocket("ws://localhost:8000/");
-      socket.onerror = function(err) {
-        console.log("error",err);
-      };
-
-      socket.onmessage = function(event) {
-        var data = event.data;
-        var profile = JSON.parse(data);
-        if (profile.num) {
-          if (profile.plan) {
-            var item = collection.findWhere({ num: profile.num });
-            item.set('plan', profile.plan || null);
+      var socket;
+      function connect() {
+        if (socket) {
+          socket.onclose = socket.onerror = null;
+          if (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN) {
+            socket.close();
           }
-        } else {
-          profile.num = count++;
-          collection.add(new ProfileModel(profile, { parse: true }));
-          chartView.addPoint(profile);
-          var excess;
-          if (collection.sortField && collection.sortField.charAt(0) === '-') {
-            excess = collection.toArray().slice(50);
-          } else {
-            excess = collection.toArray().slice(0, -50);
-          }
-
-          collection.remove(excess);
         }
-      };
+
+        console.info('Re-establishing socket');
+        socket = new WebSocket("ws://localhost:8000/");
+
+        socket.onerror = function(err) {
+          console.error('Socket error', err);
+          setTimeout(function() {
+            connect();
+          }, 1000);
+        };
+
+        socket.onclose = function() {
+          console.info('Socket closed');
+
+          setTimeout(function() {
+            connect();
+          }, 1000);
+        };
+
+        socket.onmessage = function(event) {
+          var data = event.data;
+          var profile = JSON.parse(data);
+          if (profile.num) {
+            if (profile.plan) {
+              var item = collection.findWhere({ num: profile.num });
+              item.set('plan', profile.plan || null);
+            }
+          } else {
+            profile.num = count++;
+            collection.add(new ProfileModel(profile, { parse: true }));
+            chartView.addPoint(profile);
+            var excess;
+            if (collection.sortField && collection.sortField.charAt(0) === '-') {
+              excess = collection.toArray().slice(50);
+            } else {
+              excess = collection.toArray().slice(0, -50);
+            }
+
+            collection.remove(excess);
+          }
+        };
+      }
+
+      var count = 1;
+
+      connect();
 
       var collection = this.collection = new Backbone.Collection([]);
       var view = this.view = new CompositeView({
